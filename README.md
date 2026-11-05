@@ -69,6 +69,7 @@ bun dev            # or npm run dev
 ```
 
 The app runs at http://localhost:8080.
+Live : https://meetlyai.lovable.app
 
 ## AI configuration
 
