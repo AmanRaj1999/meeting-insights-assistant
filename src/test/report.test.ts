@@ -37,8 +37,17 @@ describe("formatInsightsReport", () => {
 
   it("labels agreed mitigations as agreed", () => {
     const report = formatInsightsReport({
-      ...sample,
-      risks: [{ ...sample.risks[0], mitigationType: "agreed" }],
+      actionItems: sample.actionItems,
+      decisions: sample.decisions,
+      risks: [
+        {
+          risk: "Third-party API rate limits",
+          impact: "Delays the sync feature",
+          mitigation: "Add request batching",
+          mitigationType: "agreed",
+        },
+      ],
+      followUps: sample.followUps,
     });
     expect(report).toContain("Agreed mitigation:");
   });

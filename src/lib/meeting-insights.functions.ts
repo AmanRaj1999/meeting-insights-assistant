@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateResponse, GatewayError } from "@lovable.dev/ai-gateway";
+import { generateResponse, GatewayError, PaymentRequiredError, RateLimitError } from "@lovable.dev/ai-gateway";
 import {
   EMPTY_INSIGHTS,
   type ActionItem,
@@ -38,47 +38,47 @@ function normalizeInsights(raw: unknown): MeetingInsights {
   const base = (raw ?? {}) as Record<string, unknown>;
   const NOT_SPECIFIED = "Not specified";
 
-  const actionItems: ActionItem[] = Array.isArray(base.action_items)
-    ? base.action_items.map((item) => {
-        const it = (item ?? {}) as Record<string, unknown>;
+  const actionItems: ActionItem[] = Array.isArray(base["action_items"])
+    ? (base["action_items"] as unknown[]).map((entry) => {
+        const it = (entry ?? {}) as Record<string, unknown>;
         return {
-          task: str(it.task, ""),
-          owner: str(it.owner, NOT_SPECIFIED),
-          dueDate: str(it.due_date, NOT_SPECIFIED),
+          task: str(it["task"], ""),
+          owner: str(it["owner"], NOT_SPECIFIED),
+          dueDate: str(it["due_date"], NOT_SPECIFIED),
         };
       })
     : [];
 
-  const decisions: DecisionItem[] = Array.isArray(base.decisions)
-    ? base.decisions.map((item) => {
-        const it = (item ?? {}) as Record<string, unknown>;
+  const decisions: DecisionItem[] = Array.isArray(base["decisions"])
+    ? (base["decisions"] as unknown[]).map((entry) => {
+        const it = (entry ?? {}) as Record<string, unknown>;
         return {
-          decision: str(it.decision, ""),
-          status: it.status === "proposed" ? "proposed" : "confirmed",
-          context: str(it.context, ""),
+          decision: str(it["decision"], ""),
+          status: it["status"] === "proposed" ? "proposed" : "confirmed",
+          context: str(it["context"], ""),
         };
       })
     : [];
 
-  const risks: RiskItem[] = Array.isArray(base.risks)
-    ? base.risks.map((item) => {
-        const it = (item ?? {}) as Record<string, unknown>;
+  const risks: RiskItem[] = Array.isArray(base["risks"])
+    ? (base["risks"] as unknown[]).map((entry) => {
+        const it = (entry ?? {}) as Record<string, unknown>;
         return {
-          risk: str(it.risk, ""),
-          impact: str(it.impact, ""),
-          mitigation: str(it.mitigation, ""),
-          mitigationType: it.mitigation_type === "agreed" ? "agreed" : "suggested",
+          risk: str(it["risk"], ""),
+          impact: str(it["impact"], ""),
+          mitigation: str(it["mitigation"], ""),
+          mitigationType: it["mitigation_type"] === "agreed" ? "agreed" : "suggested",
         };
       })
     : [];
 
-  const followUps: FollowUpItem[] = Array.isArray(base.follow_ups)
-    ? base.follow_ups.map((item) => {
-        const it = (item ?? {}) as Record<string, unknown>;
+  const followUps: FollowUpItem[] = Array.isArray(base["follow_ups"])
+    ? (base["follow_ups"] as unknown[]).map((entry) => {
+        const it = (entry ?? {}) as Record<string, unknown>;
         return {
-          item: str(it.item, ""),
-          owner: str(it.owner, NOT_SPECIFIED),
-          status: str(it.status, "Pending"),
+          item: str(it["item"], ""),
+          owner: str(it["owner"], NOT_SPECIFIED),
+          status: str(it["status"], "Pending"),
         };
       })
     : [];
@@ -92,10 +92,10 @@ function normalizeInsights(raw: unknown): MeetingInsights {
 }
 
 function safeErrorMessage(err: GatewayError): string {
-  if (err instanceof GatewayError && err.code === "rate_limit_exceeded") {
+  if (err instanceof RateLimitError) {
     return "The AI service is busy right now. Please wait a moment and try again.";
   }
-  if (err instanceof GatewayError && (err.code === "payment_required" || err.code === "insufficient_credits")) {
+  if (err instanceof PaymentRequiredError) {
     return "The AI service is temporarily unavailable (credits exhausted). Please try again later.";
   }
   return "The AI service could not process the notes. Please try again in a moment.";
